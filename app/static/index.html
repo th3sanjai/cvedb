@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CVE List Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #000;
+      color: #fff;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: linear-gradient(145deg, #111111, #1a1a1a);
+      box-shadow: inset 0 0 15px #00ffff22;
+      border-bottom: 1px solid #00ffff33;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      color: white;
+      text-shadow:
+        0 0 4px #00ffff77,
+        0 0 10px #00ffff55,
+        0 0 15px #00ffff33;
+    }
+
+    main {
+      max-width: 90%;
+      margin: 2rem auto;
+      background: rgba(10, 10, 10, 0.95);
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow:
+        0 0 15px #00ffff40,
+        inset 0 0 25px #00cccc33,
+        inset 0 0 30px #00ffff22;
+      transition: box-shadow 0.3s ease;
+    }
+
+    main:hover {
+      box-shadow:
+        0 0 30px #00ffff66,
+        inset 0 0 40px #00cccc55,
+        inset 0 0 50px #00ffff33;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      justify-content: center;
+    }
+
+    input, select {
+      background: #111;
+      color: white;
+      border: 1px solid #00ffff55;
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 5px #00ffff33 inset;
+    }
+
+    input:focus, select:hover, select:focus {
+      outline: none;
+      border-color: #00ffff;
+      box-shadow: 0 0 10px #00ffff66 inset;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: #111;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    thead {
+      background-color: #00ffff33;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #00ffff22;
+    }
+
+    tbody tr:hover {
+      background-color: #00ffff11;
+      box-shadow:
+        0 6px 18px rgb(0 255 255 / 0.5),
+        0 0 8px #00ffffaa;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 2rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      background-color: #111;
+      color: white;
+      border: 1px solid #00ffff88;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 5px #00ffff88;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #00ffff22;
+      box-shadow: 0 0 12px #00ffffaa;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      border: 6px solid #333;
+      border-top: 6px solid #00ffff88;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      th, td {
+        font-size: 0.9rem;
+      }
+
+      .pagination {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+
+    .cve-detail {
+      margin-top: 2rem;
+      background: rgba(10, 10, 10, 0.95);
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #00ffff40;
+      font-size: 0.95rem;
+    }
+
+    .cve-detail h2, .cve-detail h3 {
+      color: #00ffff;
+      margin-top: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .cve-detail table {
+      background: #111;
+      margin-top: 0.5rem;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: inset 0 0 15px #00ffff44;
+    }
+
+    .cve-detail th, .cve-detail td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #00ffff22;
+      color: #aaffff;
+      text-align: left;
+    }
+
+    .cve-detail th {
+      background-color: #005555aa;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header>🛡️ CVE List Viewer</header>
+  <main>
+    <div class="filters" role="search" aria-label="Filter CVE list">
+      <input
+        id="search-input"
+        type="search"
+        placeholder="Search CVE ID or description..."
+        aria-label="Search CVE by ID or description"
+        spellcheck="false"
+        autocomplete="off"
+      />
+      <select id="severity-filter" aria-label="Filter by severity">
+        <option value="">Filter by Severity (All)</option>
+        <option value="HIGH">High</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="LOW">Low</option>
+        <option value="NONE">None</option>
+      </select>
+      <select id="status-filter" aria-label="Filter by status">
+        <option value="">Filter by Status (All)</option>
+        <option value="Deferred">Deferred</option>
+        <option value="Analyzed">Analyzed</option>
+        <option value="Modified">Modified</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+    </div>
+
+    <div id="loading" class="loading" role="alert" aria-live="assertive" aria-busy="true" aria-label="Loading CVEs" style="display:none;">
+      <div class="spinner" aria-hidden="true"></div>
+      Loading CVEs...
+    </div>
+
+    <table id="cve-table" style="display:none;" role="grid" aria-describedby="table-desc" tabindex="0" >
+      <caption id="table-desc" style="text-align:left; padding-bottom:8px; font-style: italic; color: #00ccccbb;">
+        Showing CVEs. Use search and filters above to refine results.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">CVE ID</th>
+          <th scope="col">Identifier</th>
+          <th scope="col">Published Date</th>
+          <th scope="col">Last Modified</th>
+          <th scope="col">Status</th>
+          <th scope="col">Severity</th>
+        </tr>
+      </thead>
+      <tbody id="cve-tbody"></tbody>
+    </table>
+
+    <div id="fallback" class="fallback" style="display:none;" role="alert" aria-live="polite">
+      No CVEs available at the moment. Please try again later.
+    </div>
+
+    <div class="pagination" role="navigation" aria-label="Pagination controls">
+      <button id="prev-btn" disabled aria-label="Previous page">⬅️ Previous</button>
+      <span aria-live="polite" aria-atomic="true" class="page-info" id="page-info">Page 1</span>
+      <button id="next-btn" disabled aria-label="Next page">Next ➡️</button>
+      <label class="limit-selector" for="limit-select" style="user-select:none; color:#00cccccc; font-weight:600; font-size:1rem; cursor:pointer;">
+        Results per page:
+      </label>
+      <select id="limit-select" aria-label="Select number of results per page" style="margin-left:8px;">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+
+    <div id="cve-detail" class="cve-detail" style="display:none;" aria-live="polite" aria-atomic="true">
+      <h2>CVE Details</h2>
+      <p><strong>CVE ID:</strong> <span id="detail-cve-id"></span></p>
+      <p><strong>Description:</strong> <span id="detail-description"></span></p>
+
+      <h3>CVSS v2 Metrics</h3>
+      <p><strong>Severity:</strong> <span id="detail-severity"></span> | <strong>Score:</strong> <span id="detail-score"></span></p>
+      <p><strong>Vector String:</strong> <span id="detail-vector-string"></span></p>
+
+      <h3>Access Vector Metrics</h3>
+      <table id="access-vector-table" style="width: 100%; border-collapse: collapse; margin-top: 0.25rem;">
+        <thead>
+          <tr>
+            <th>Access Vector</th>
+            <th>Attack Complexity</th>
+            <th>Authentication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="detail-access-vector"></td>
+            <td id="detail-attack-complexity"></td>
+            <td id="detail-authentication"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Impact Metrics</h3>
+      <table id="impact-metrics-table" style="width: 100%; border-collapse: collapse; margin-top: 0.25rem;">
+        <thead>
+          <tr>
+            <th>Confidentiality Impact</th>
+            <th>Integrity Impact</th>
+            <th>Availability Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="detail-confidentiality-impact"></td>
+            <td id="detail-integrity-impact"></td>
+            <td id="detail-availability-impact"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Scores</h3>
+      <p><strong>Exploitability Score:</strong> <span id="detail-exploitability-score"></span> | <strong>Impact Score:</strong> <span id="detail-impact-score"></span></p>
+
+      <h3>CPE</h3>
+      <table id="cpe-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th>Criteria</th>
+            <th>Match Criteria ID</th>
+            <th>Vulnerable</th>
+          </tr>
+        </thead>
+        <tbody id="cpe-tbody"></tbody>
+      </table>
+    </div>
+    <div class="controls" style="justify-content: center; margin-top: 2rem;">
+      <a href="/docs" style="text-decoration: none;">
+        <button aria-label="API Documentation">📄 View API Documentation</button>
+      </a>
+    </div>
+  </main>
+  <div class="footer" style="text-align:center; padding:1rem; color:#00cccccc; user-select:none;">Created by Th3sanjai</div>
+
+  <script>
+    const API_ENDPOINT = '/api/cves/list';
+    let currentPage = 1;
+    let currentLimit = 10;
+    let currentData = [];
+
+    const loadingEl = document.getElementById('loading');
+    const tableEl = document.getElementById('cve-table');
+    const tbodyEl = document.getElementById('cve-tbody');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const pageInfo = document.getElementById('page-info');
+    const fallbackEl = document.getElementById('fallback');
+    const limitSelect = document.getElementById('limit-select');
+
+    const searchInput = document.getElementById('search-input');
+    const severityFilter = document.getElementById('severity-filter');
+    const statusFilter = document.getElementById('status-filter');
+
+    const cveDetailEl = document.getElementById('cve-detail');
+
+    async function fetchCves(page, limit) {
+      loadingEl.style.display = 'flex';
+      tableEl.style.display = 'none';
+      fallbackEl.style.display = 'none';
+      cveDetailEl.style.display = 'none';
+
+      try {
+        const response = await fetch(`${API_ENDPOINT}?page=${page}&limit=${limit}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        loadingEl.textContent = 'Failed to load CVEs. Try refreshing the page.';
+        console.error('Fetch error:', error);
+        return null;
+      }
+    }
+
+    function filterData(data) {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      const severityVal = severityFilter.value;
+      const statusVal = statusFilter.value;
+
+      return data.filter(cve => {
+        const matchesSearch = !searchTerm ||
+          (cve.cve_id && cve.cve_id.toLowerCase().includes(searchTerm)) ||
+          (cve.description && cve.description.toLowerCase().includes(searchTerm));
+
+        const matchesSeverity = !severityVal || (cve.severity && cve.severity.toLowerCase() === severityVal.toLowerCase());
+
+        const matchesStatus = !statusVal || (cve.status && cve.status.toLowerCase() === statusVal.toLowerCase());
+
+        return matchesSearch && matchesSeverity && matchesStatus;
+      });
+    }
+
+    function renderTable(data) {
+      tbodyEl.innerHTML = '';
+      if (!data || data.length === 0) {
+        fallbackEl.style.display = 'block';
+        tableEl.style.display = 'none';
+        return;
+      }
+      fallbackEl.style.display = 'none';
+      tableEl.style.display = 'table';
+
+      for (const cve of data) {
+        const row = document.createElement('tr');
+
+        const publishedDate = cve.published ? new Date(cve.published).toLocaleDateString() : 'N/A';
+        const modifiedDate = cve.lastmodified ? new Date(cve.lastmodified).toLocaleDateString() : 'N/A';
+
+        const severityText = cve.severity || 'N/A';
+        let severityColor = '#88cccc';
+        switch ((severityText || '').toLowerCase()) {
+          case 'high': severityColor = '#ff4444'; break;
+          case 'medium': severityColor = '#ffbb33'; break;
+          case 'low': severityColor = '#44cc44'; break;
+          case 'none': severityColor = '#888888'; break;
+        }
+
+        row.innerHTML = `
+          <td><strong title="Click to search this CVE">${cve.cve_id || 'N/A'}</strong></td>
+          <td>${cve.identifier || 'N/A'}</td>
+          <td>${publishedDate}</td>
+          <td>${modifiedDate}</td>
+          <td>${cve.status || 'N/A'}</td>
+          <td style="font-weight:600; color: ${severityColor};">${severityText}</td>
+        `;
+
+        tbodyEl.appendChild(row);
+      }
+
+      [...tbodyEl.querySelectorAll('td strong')].forEach(strongEl => {
+        strongEl.style.cursor = 'pointer';
+        strongEl.title = 'Click to search this CVE';
+        strongEl.onclick = () => {
+          const cveId = strongEl.textContent;
+          searchInput.value = cveId;
+          applyFiltersAndRender();
+          fetchCveDetail(cveId);
+        };
+      });
+    }
+
+    function applyFiltersAndRender() {
+      const filtered = filterData(currentData);
+      renderTable(filtered);
+
+      nextBtn.disabled = filtered.length < currentLimit;
+      prevBtn.disabled = currentPage <= 1;
+      pageInfo.textContent = `Page ${currentPage} (Showing ${filtered.length} of ${currentData.length})`;
+    }
+
+    async function updatePage(page, limit) {
+      loadingEl.style.display = 'flex';
+      tableEl.style.display = 'none';
+      fallbackEl.style.display = 'none';
+      cveDetailEl.style.display = 'none';
+      pageInfo.textContent = `Page ${page}`;
+
+      currentPage = page;
+      currentLimit = limit;
+
+      const data = await fetchCves(page, limit);
+      if (!data) return;
+
+      currentData = data;
+
+      searchInput.value = '';
+      severityFilter.value = '';
+      statusFilter.value = '';
+
+      applyFiltersAndRender();
+      loadingEl.style.display = 'none';
+      tableEl.style.display = 'table';
+    }
+
+    // Fetch detailed CVE data
+    async function fetchCveDetail(cveId) {
+      try {
+        const response = await fetch(`/api/cves/${cveId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        renderCveDetail(data);
+      } catch (error) {
+        console.error('Fetch error:', error);
+        alert('Failed to load CVE details. Please try again later.');
+      }
+    }
+
+    // Render the detailed CVE information
+    function renderCveDetail(cve) {
+      document.getElementById('detail-cve-id').textContent = cve.cve_id || 'N/A';
+      document.getElementById('detail-description').textContent = cve.description || 'N/A';
+      document.getElementById('detail-severity').textContent = cve.severity || 'N/A';
+      document.getElementById('detail-score').textContent = cve.base_score || 'N/A';
+      document.getElementById('detail-vector-string').textContent = cve.vector_string || 'N/A';
+      document.getElementById('detail-access-vector').textContent = cve.access_vector || 'N/A';
+      document.getElementById('detail-attack-complexity').textContent = cve.attack_complexity || 'N/A';
+      document.getElementById('detail-authentication').textContent = cve.authentication || 'N/A';
+      document.getElementById('detail-confidentiality-impact').textContent = cve.confidentiality_impact || 'N/A';
+      document.getElementById('detail-integrity-impact').textContent = cve.integrity_impact || 'N/A';
+      document.getElementById('detail-availability-impact').textContent = cve.availability_impact || 'N/A';
+      document.getElementById('detail-exploitability-score').textContent = cve.exploitability_score || 'N/A';
+      document.getElementById('detail-impact-score').textContent = cve.impact_score || 'N/A';
+
+      const cpeTbody = document.getElementById('cpe-tbody');
+      cpeTbody.innerHTML = ''; 
+      if (Array.isArray(cve.cpes) && cve.cpes.length > 0) {
+        cve.cpes.forEach(cpe => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${cpe.criteria || 'N/A'}</td>
+            <td>${cpe.matchCriteriaId || 'N/A'}</td>
+            <td>${cpe.vulnerable ? 'YES' : 'NO'}</td>
+          `;
+          cpeTbody.appendChild(row);
+        });
+      } else {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="3" style="text-align:center;">No CPE data available</td>`;
+        cpeTbody.appendChild(row);
+      }
+
+      cveDetailEl.style.display = 'block';
+      cveDetailEl.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) updatePage(currentPage - 1, currentLimit);
+    });
+    nextBtn.addEventListener('click', () => {
+      updatePage(currentPage + 1, currentLimit);
+    });
+
+    limitSelect.addEventListener('change', () => {
+      const newLimit = parseInt(limitSelect.value, 10);
+      updatePage(1, newLimit);
+    });
+
+    function debounce(fn, delay) {
+      let timer = null;
+      return function(...args) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+    const debouncedApplyFilters = debounce(() => applyFiltersAndRender(), 250);
+    searchInput.addEventListener('input', debouncedApplyFilters);
+    severityFilter.addEventListener('change', applyFiltersAndRender);
+    statusFilter.addEventListener('change', applyFiltersAndRender);
+
+    // Initial load
+    updatePage(currentPage, currentLimit);
+  </script>
+</body>
+</html>
+

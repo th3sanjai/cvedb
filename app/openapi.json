@@ -1,0 +1,213 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CVE Listing API",
+    "version": "1.0.0",
+    "description": "API to fetch paginated list of CVEs"
+  },
+  "paths": {
+    "/api/cves/list": {
+      "get": {
+        "summary": "Get list of CVEs with pagination",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number to fetch",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of results per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of CVEs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CVE"
+                  }
+                },
+                "example": [
+                  {
+                    "cve_id": "CVE-1999-0095",
+                    "identifier": "cve@mitre.org",
+                    "published": "1988-10-01 04:00:00",
+                    "lastmodified": "2025-04-03 01:03:51",
+                    "status": "Deferred",
+                    "description": "The debug command in Sendmail is enabled, allowing attackers to execute commands as root.",
+                    "severity": "HIGH",
+                    "base_score": 10.0,
+                    "vector_string": "AV:N/AC:L/Au:N/C:C/I:C/A:C",
+                    "exploitability_score": 10.0,
+                    "impact_score": 10.0,
+                    "access_vector": "NETWORK",
+                    "attack_complexity": "LOW",
+                    "authentication": "NONE",
+                    "confidentiality_impact": "COMPLETE",
+                    "integrity_impact": "COMPLETE",
+                    "availability_impact": "COMPLETE",
+                    "cpes": [
+                      {
+                        "matchCriteriaId": "1D07F493-9C8D-44A4-8652-F28B46CBA27C",
+                        "criteria": "cpe:2.3:a:eric_allman:sendmail:5.58:*:*:*:*:*:*:*",
+                        "vulnerable": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CPE": {
+        "type": "object",
+        "properties": {
+          "matchCriteriaId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique match criteria ID"
+          },
+          "criteria": {
+            "type": "string",
+            "description": "CPE matching criteria string"
+          },
+          "vulnerable": {
+            "type": "boolean",
+            "description": "Indicates if the CPE is vulnerable"
+          }
+        },
+        "required": ["matchCriteriaId", "criteria", "vulnerable"]
+      },
+      "CVE": {
+        "type": "object",
+        "properties": {
+          "cve_id": {
+            "type": "string",
+            "description": "CVE Identifier"
+          },
+          "identifier": {
+            "type": "string",
+            "format": "email",
+            "description": "Contact identifier for CVE"
+          },
+          "published": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Publication date"
+          },
+          "lastmodified": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last modified date"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the CVE"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the vulnerability"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+            "description": "Severity rating"
+          },
+          "base_score": {
+            "type": "number",
+            "format": "float",
+            "description": "Base CVSS score"
+          },
+          "vector_string": {
+            "type": "string",
+            "description": "CVSS vector string"
+          },
+          "exploitability_score": {
+            "type": "number",
+            "format": "float",
+            "description": "Exploitability score"
+          },
+          "impact_score": {
+            "type": "number",
+            "format": "float",
+            "description": "Impact score"
+          },
+          "access_vector": {
+            "type": "string",
+            "description": "Access vector type"
+          },
+          "attack_complexity": {
+            "type": "string",
+            "description": "Complexity of attack"
+          },
+          "authentication": {
+            "type": "string",
+            "description": "Authentication requirements"
+          },
+          "confidentiality_impact": {
+            "type": "string",
+            "description": "Impact on confidentiality"
+          },
+          "integrity_impact": {
+            "type": "string",
+            "description": "Impact on integrity"
+          },
+          "availability_impact": {
+            "type": "string",
+            "description": "Impact on availability"
+          },
+          "cpes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CPE"
+            },
+            "description": "List of related CPE entries"
+          }
+        },
+        "required": [
+          "cve_id",
+          "identifier",
+          "published",
+          "lastmodified",
+          "status",
+          "description",
+          "severity",
+          "base_score",
+          "vector_string",
+          "exploitability_score",
+          "impact_score",
+          "access_vector",
+          "attack_complexity",
+          "authentication",
+          "confidentiality_impact",
+          "integrity_impact",
+          "availability_impact",
+          "cpes"
+        ]
+      }
+    }
+  }
+}
