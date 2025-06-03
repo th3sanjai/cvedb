@@ -81,7 +81,7 @@ async def process_cve(session: AsyncSession, cve_data: dict):
     session.add(cve_record)
 
 async def fetch_and_store_cves():
-    async with httpx.AsyncClient(verify=False, proxy="http://localhost:8080") as client:
+    async with httpx.AsyncClient(verify=False) as client:
         res = await client.request("GET",f"{BASE_URL}?resultsPerPage=1", headers={"User-Agent": UserAgent().random}, timeout=60)
         total = res.json().get("totalResults", 0)
         logger.info(f"Total CVEs to fetch: {total}")
