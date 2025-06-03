@@ -1,0 +1,29 @@
+[project]
+name = "cvedb"
+version = "0.1.0"
+description = "An Asynchronous cvedb api server"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "appdirs>=1.4.4",
+    "asyncpg>=0.30.0",
+    "colorama>=0.4.6",
+    "fake-agent>=0.1.4",
+    "fake-useragent>=2.2.0",
+    "fastapi>=0.115.12",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.5",
+    "pyyaml>=6.0.2",
+    "sqlalchemy[asyncio]>=2.0.41",
+    "uvicorn>=0.34.3",
+]
+
+[project.scripts]
+cvedb = "cvedb.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[tool.hatch.build.targets.wheel]
+packages = ["cvedb.app"]
